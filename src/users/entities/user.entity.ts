@@ -16,6 +16,9 @@ export class User {
   id: string;
 
   @Column()
+  login: string;
+
+  @Column()
   firstname: string;
 
   @Column()
