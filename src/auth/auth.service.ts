@@ -3,9 +3,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Injectable } from '@nestjs/common';
-import { UsersService } from "../users/users.service";
+import { JwtService } from '@nestjs/jwt';import { UsersService } from "../users/users.service";
 
 
 @Injectable()
@@ -20,21 +18,60 @@ export class AuthService {
   private readonly refreshExpires: string = process.env.JWT_REFRESH_EXPIRES;
 
   async signUp(signUpDto) {
-    const login = signUpDto.login;
-    const user = await this.usersService.getByLogin(login);
+    const email = signUpDto.email;
+    const user = await this.usersService.getByEmail(email);
     if (!user) {
       return await this.usersService.create(signUpDto);
     } else throw new UnprocessableEntityException('Login already in use');
   }
 
-  async login(loginDto) {
-    const login = loginDto.login;
-    const password = loginDto.password;
-    const user = await this.usersService.getByLogin(login);
+  async login(email, password) {
+    //const email = loginDto.email;
+    //const password = loginDto.password;
+    const user = await this.usersService.getByEmail(email);
     if (user) {
       const passwordCheck = await user.user.checkPassword(password);
       if (passwordCheck) {
-        const payload = { userId: user.user.id, login: user.user.login };
+        const payload = {
+          userId: user.user.id,
+          role: user.user.role,
+          firstname: user.user.firstname,
+          surname: user.user.surname };
+
+        return {
+          accessToken: await this.jwtService.signAsync(payload, {
+            secret: this.secretKey,
+            expiresIn: this.expires,
+          }),
+          refreshToken: await this.jwtService.signAsync(payload, {
+            secret: this.secretKey,
+            expiresIn: this.refreshExpires,
+          }),
+        };
+
+
+      }
+      throw new ForbiddenException('Login or password wrong');
+    }
+    throw new ForbiddenException('Login or password wrong');
+  }
+
+  async googleLogin(tokenData) {
+    if (!tokenData) {
+      throw new UnprocessableEntityException('no data')
+    }
+    else {
+      const user = await this.usersService.getByEmail(tokenData.email);
+      if(user) {
+        const payload = {
+          userId: user.user.id,
+          email: user.user.email,
+          role: user.user.role,
+          firstname: user.user.firstname,
+          surname: user.user.surname,
+          picture: user.user.avatarLink,
+          confirmed: user.user.confirmed
+        };
 
         return {
           accessToken: await this.jwtService.signAsync(payload, {
@@ -47,9 +84,21 @@ export class AuthService {
           }),
         };
       }
-      throw new ForbiddenException('Login or password wrong');
+      else {
+        const user = await this.usersService.createSocial(tokenData);
+        const payload = { user };
+        return {
+          accessToken: await this.jwtService.signAsync(payload, {
+            secret: this.secretKey,
+            expiresIn: this.expires,
+          }),
+          refreshToken: await this.jwtService.signAsync(payload, {
+            secret: this.secretKey,
+            expiresIn: this.refreshExpires,
+          }),
+        };
+      }
     }
-    throw new ForbiddenException('Login or password wrong');
   }
 
   async refresh(refreshUserDto): Promise<{ accessToken }> {

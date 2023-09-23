@@ -25,12 +25,23 @@ export class UsersService {
     return false;
   }
 
+  async getByEmail(email: string) {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    if (user) {
+      return { user };
+    }
+    return false;
+  }
+
 
 
   async create(userDto: CreateUserDto) {
     const user = this.usersRepository.create({
       id: uuidv4(),
+      login: userDto.email,
       email: userDto.email,
+      role: "user",
+      confirmed: false,
       firstname: userDto.firstname,
       surname: userDto.surname,
       password: userDto.password,
@@ -41,6 +52,36 @@ export class UsersService {
     const savedUser = await this.usersRepository.save(user);
     const { id, email, surname, firstname, version, createdAt, updatedAt } = savedUser;
     return { id, email, surname, firstname,  version, createdAt, updatedAt };
+  }
+
+  async createSocial(tokenData) {
+    const user = this.usersRepository.create({
+      id: uuidv4(),
+      login: tokenData.email,
+      email: tokenData.email,
+      role: "user",
+      confirmed: true,
+      firstname: tokenData.given_name,
+      surname: tokenData.family_name,
+      password: "password",
+      provider: "google",
+      avatarLink: tokenData.picture,
+      phone: "",
+      version: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    const savedUser = await this.usersRepository.save(user);
+    const { id, email, surname, role, firstname, avatarLink, confirmed } = savedUser;
+    return {
+      userId: id,
+      email: email,
+      role: role,
+      surname: surname,
+      firstname: firstname,
+      picture: avatarLink,
+      confirmed: confirmed,
+      };
   }
 
   async checkPassword(id: string, oldPassword: string): Promise<boolean> {

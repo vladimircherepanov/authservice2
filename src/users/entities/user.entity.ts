@@ -37,6 +37,15 @@ export class User {
   confirmed: boolean;
 
   @Column()
+  avatarLink: string;
+
+  @Column()
+  phone: string;
+
+  @Column()
+  provider: string;
+
+  @Column()
   version: number;
 
   @Column({ type: 'bigint' })
@@ -50,11 +59,11 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    this.password = await bcrypt.hash(this.password, process.env.CRYPT_SALT);
+    this.password = await bcrypt.hash(this.password, 10); //process.env.CRYPT_SALT);
   }
 
-  checkPassword(oldPassword: string): Promise<boolean> {
-    return bcrypt.compare(oldPassword, this.password);
+  async checkPassword(password: string): Promise<boolean> {
+    return await bcrypt.compare(password, this.password);
   }
 }
 

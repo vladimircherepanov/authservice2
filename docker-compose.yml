@@ -6,10 +6,13 @@ services:
     ports:
       - ${PORT}:${PORT}
     environment:
+      PORT: ${PORT}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES: ${JWT_EXPIRES}
       JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES}
       CRYPT_SALT: ${CRYPT_SALT}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     volumes:
       - ./src:/usr/app/src
     networks:
@@ -19,6 +22,8 @@ services:
     restart: always
 
   postgres:
+    ports:
+      - ${DB_PORT}:${DB_PORT}
     build:
       context: ./src/db
     environment:

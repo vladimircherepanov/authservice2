@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["@types/passport-google-oauth20"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
