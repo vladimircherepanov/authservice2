@@ -12,7 +12,7 @@ import { dataSourceOptions } from './db/datasource';
   imports: [
     TypeOrmModule.forRoot(dataSourceOptions),
     UsersModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
