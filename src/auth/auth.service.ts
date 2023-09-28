@@ -4,7 +4,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';import { UsersService } from "../users/users.service";
-
+import { LoginDto } from "./dto/login.dto";
+import { SignUpDto } from "./dto/signUp.dto";
 
 @Injectable()
 export class AuthService {
@@ -17,17 +18,34 @@ export class AuthService {
   private readonly expires: string = process.env.JWT_EXPIRES;
   private readonly refreshExpires: string = process.env.JWT_REFRESH_EXPIRES;
 
-  async signUp(signUpDto) {
-    const email = signUpDto.email;
-    const user = await this.usersService.getByEmail(email);
-    if (!user) {
-      return await this.usersService.create(signUpDto);
-    } else throw new UnprocessableEntityException('Login already in use');
+  async signUp(tokenData) { //add validation by DTO
+    const email = tokenData.email;
+    const existingUser = await this.usersService.getByEmail(email);
+    if (!existingUser) {
+      const user =  await this.usersService.create(tokenData);
+      const payload = {
+        userId: user.id,
+        role: user.role,
+        firstname: user.firstname,
+        surname: user.surname,
+        confirmed: user.confirmed
+      };
+      return {
+        accessToken: await this.jwtService.signAsync(payload, {
+          secret: this.secretKey,
+          expiresIn: this.expires,
+        }),
+        refreshToken: await this.jwtService.signAsync(payload, {
+          secret: this.secretKey,
+          expiresIn: this.refreshExpires,
+        }),
+      };
+    } else throw new UnprocessableEntityException('email already in use');
   }
 
-  async login(email, password) {
-    //const email = loginDto.email;
-    //const password = loginDto.password;
+  async login(tokenData) { //add validation by DTO
+    const email = tokenData.email;
+    const password = tokenData.password;
     const user = await this.usersService.getByEmail(email);
     if (user) {
       const passwordCheck = await user.user.checkPassword(password);
@@ -36,7 +54,9 @@ export class AuthService {
           userId: user.user.id,
           role: user.user.role,
           firstname: user.user.firstname,
-          surname: user.user.surname };
+          surname: user.user.surname,
+          confirmed: user.user.confirmed
+        };
 
         return {
           accessToken: await this.jwtService.signAsync(payload, {
@@ -48,7 +68,6 @@ export class AuthService {
             expiresIn: this.refreshExpires,
           }),
         };
-
 
       }
       throw new ForbiddenException('Login or password wrong');

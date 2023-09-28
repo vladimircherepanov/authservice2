@@ -35,23 +35,28 @@ export class UsersService {
 
 
 
-  async create(userDto: CreateUserDto) {
+  async create(tokenData) {
     const user = this.usersRepository.create({
       id: uuidv4(),
-      login: userDto.email,
-      email: userDto.email,
+      login: tokenData.email,
+      email: tokenData.email,
       role: "user",
       confirmed: false,
-      firstname: userDto.firstname,
-      surname: userDto.surname,
-      password: userDto.password,
+      firstname: tokenData.firstname,
+      surname: tokenData.surname,
+      password: tokenData.password,
+      provider: "email",
+      avatarLink: "",
+      phone: "",
       version: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
     const savedUser = await this.usersRepository.save(user);
-    const { id, email, surname, firstname, version, createdAt, updatedAt } = savedUser;
-    return { id, email, surname, firstname,  version, createdAt, updatedAt };
+    console.log(savedUser);
+    const { id, email, surname, role, firstname, avatarLink, confirmed } = savedUser;
+
+    return { id, email, surname, role, firstname, avatarLink, confirmed };
   }
 
   async createSocial(tokenData) {
@@ -63,9 +68,9 @@ export class UsersService {
       confirmed: true,
       firstname: tokenData.given_name,
       surname: tokenData.family_name,
-      password: "password",
+      password: "1234567654dscc",
       provider: "google",
-      avatarLink: tokenData.picture,
+      avatarLink: "",
       phone: "",
       version: 1,
       createdAt: Date.now(),
