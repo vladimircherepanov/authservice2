@@ -1,4 +1,16 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request, Get, Req, Headers } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+  Request,
+  Get,
+  Req,
+  Headers,
+  UnauthorizedException
+} from "@nestjs/common";
 
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signUp.dto';
@@ -19,40 +31,37 @@ export class AuthController {
   //@Public()
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  async signUp(@Body() signUpDto: SignUpDto) {
-    return await this.authService.signUp(signUpDto);
+  async signUp(@Body() clientToken) {
+    const parsedToken = await clientToken.token;
+    const tokenData = await this.jwtService.decode(parsedToken);
+    console.log(tokenData);
+    return await this.authService.signUp(tokenData);
   }
 
   //@Public()
   //@UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async signIn(@Body() loginDto: LoginDto) {
-    return await this.authService.login(loginDto.email, loginDto.password);
+  async signIn(@Body() clientToken) {
+    const parsedToken = await clientToken.token;
+      //this.jwtService.verify(parsedToken, {secret: '6Ecomyh20ZEZ12HAfKIUfegmc7W9bkaZEoyj4NfsAKI='})
+      const tokenData = await this.jwtService.decode(parsedToken);
+      return await this.authService.login(tokenData);
+
   }
+
 
   @Post('social')
   @HttpCode(HttpStatus.OK)
   async socialLogin(@Body() clientToken ) {
-    //const jwt = request.headers.replace('Bearer ', '');
-    //const json = this.jwtService.decode(jwt, { json: true }) as { uuid: string };
-    //return await this.authService.login(loginDto.email, loginDto.password);
     const parsedToken = clientToken.token;
-    const tokenData = await this.jwtService.decode(parsedToken);
-
-    return this.authService.googleLogin(tokenData);
+    //if(this.jwtService.verify(parsedToken, {})) {
+      const tokenData = await this.jwtService.decode(parsedToken);
+      return this.authService.googleLogin(tokenData);
+    //}
+     //else throw new UnauthorizedException("FUCK YOU")
   }
 
-
-  @Get()
-  @UseGuards(GoogleOAuthGuard)
-  async googleAuth(@Request() req) {}
-
-  @Get('/google/callback')
-  @UseGuards(GoogleOAuthGuard)
-  googleAuthRedirect(@Request() req) {
-    return this.authService.googleLogin(req);
-  }
 
   //@Public()
   @Post('refresh')
